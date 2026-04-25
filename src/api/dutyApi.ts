@@ -1,0 +1,16 @@
+import axiosInstance from './axiosInstance';
+
+export const createDuty = data =>
+  axiosInstance.post('/duties', data);
+
+export const getDuties = filters =>
+  axiosInstance.get('/duties', {params: filters});
+
+export const getDutyById = id =>
+  axiosInstance.get(`/duties/${id}`);
+
+export const updateDutyStatus = (id, status) =>
+  axiosInstance.patch(`/duties/${id}/status`, {status});
+
+export const deleteDuty = id =>
+  axiosInstance.delete(`/duties/${id}`);

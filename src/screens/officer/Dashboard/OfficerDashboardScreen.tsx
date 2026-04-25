@@ -1,0 +1,121 @@
+import React, {useEffect} from 'react';
+import {View, Text, StyleSheet, ScrollView, TouchableOpacity} from 'react-native';
+import {SafeAreaView} from 'react-native-safe-area-context';
+import {useSelector} from 'react-redux';
+import {useNavigation} from '@react-navigation/native';
+import {useDuties} from '../../../hooks/useDuties';
+import {useNotifications} from '../../../hooks/useNotifications';
+import DutyCard from '../../../components/common/DutyCard';
+import EmptyState from '../../../components/common/EmptyState';
+import {colors} from '../../../theme/colors';
+import {shadows} from '../../../theme/spacing';
+import {DUTY_STATUS} from '../../../constants/dutyStatus';
+import {getTodayISO} from '../../../utils/dateUtils';
+
+const getInitials = name => {
+  if (!name) return '?';
+  const parts = name.trim().split(' ').filter(Boolean);
+  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+};
+
+const OfficerDashboardScreen = () => {
+  const navigation = useNavigation();
+  const {user} = useSelector(state => state.auth);
+  const {list: duties, fetchDuties, isLoading} = useDuties();
+  useNotifications();
+
+  const todayDuties = duties.filter(d => d.date === getTodayISO());
+  const upcoming = duties.filter(d => d.status === DUTY_STATUS.UPCOMING).length;
+  const completed = duties.filter(d => d.status === DUTY_STATUS.COMPLETED).length;
+  const cancelled = duties.filter(d => d.status === DUTY_STATUS.CANCELLED).length;
+
+  useEffect(() => {
+    fetchDuties({officerId: user?.id});
+  }, []);
+
+  return (
+    <SafeAreaView style={styles.safe}>
+      <View style={styles.topBar}>
+        <View style={styles.greetingBlock}>
+          <Text style={styles.greeting}>Welcome back,</Text>
+          <Text style={styles.name}>{user?.name || 'Subordinate'} ✈️</Text>
+          <View style={styles.metaRow}>
+            {user?.employeeId && (
+              <Text style={styles.empId}>ID: {user.employeeId}</Text>
+            )}
+            <View style={styles.roleBadge}>
+              <Text style={styles.roleText}>Subordinate</Text>
+            </View>
+          </View>
+        </View>
+
+        <TouchableOpacity
+          style={styles.avatarBox}
+          onPress={() => navigation.navigate('Profile')}
+          activeOpacity={0.8}>
+          <Text style={styles.avatarText}>{getInitials(user?.name)}</Text>
+          <View style={styles.avatarHint}>
+            <Text style={styles.avatarHintText}>👤</Text>
+          </View>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.statsRow}>
+        <StatCard label="Upcoming" value={upcoming} color={colors.warning} icon="⏳" />
+        <StatCard label="Completed" value={completed} color={colors.success} icon="✅" />
+        <StatCard label="Cancelled" value={cancelled} color={colors.error} icon="❌" />
+      </View>
+
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Today's Duties</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('MyDuties')}>
+            <Text style={styles.seeAll}>See All</Text>
+          </TouchableOpacity>
+        </View>
+        {todayDuties.length === 0
+          ? <EmptyState icon="✈️" title="No duties today" subtitle="Enjoy your day off!" />
+          : todayDuties.map(d => (
+              <DutyCard key={d.id} duty={d} onPress={() => navigation.navigate('MyDuties', {screen: 'DutyDetail', params: {dutyId: d.id}})} />
+            ))
+        }
+      </ScrollView>
+    </SafeAreaView>
+  );
+};
+
+const StatCard = ({label, value, color, icon}) => (
+  <View style={[styles.statCard, {borderTopColor: color}]}>
+    <Text style={styles.statIcon}>{icon}</Text>
+    <Text style={[styles.statValue, {color}]}>{value}</Text>
+    <Text style={styles.statLabel}>{label}</Text>
+  </View>
+);
+
+const styles = StyleSheet.create({
+  safe: {flex: 1, backgroundColor: colors.background},
+  topBar: {flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', padding: 20, paddingBottom: 16, backgroundColor: colors.primary},
+  greetingBlock: {flex: 1, marginRight: 12},
+  greeting: {fontSize: 13, color: 'rgba(255,255,255,0.7)'},
+  name: {fontSize: 18, fontWeight: '700', color: colors.white, marginTop: 2},
+  metaRow: {flexDirection: 'row', alignItems: 'center', marginTop: 6, gap: 8},
+  empId: {fontSize: 11, color: 'rgba(255,255,255,0.65)'},
+  roleBadge: {backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10},
+  roleText: {fontSize: 11, color: colors.white, fontWeight: '600'},
+  avatarBox: {width: 52, height: 52, borderRadius: 26, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: 'rgba(255,255,255,0.4)'},
+  avatarText: {color: colors.white, fontSize: 17, fontWeight: '700', letterSpacing: 0.5},
+  avatarHint: {position: 'absolute', bottom: -2, right: -2, backgroundColor: colors.white, borderRadius: 8, width: 16, height: 16, justifyContent: 'center', alignItems: 'center'},
+  avatarHintText: {fontSize: 9},
+  statsRow: {flexDirection: 'row', padding: 12, gap: 8, backgroundColor: colors.primary, paddingBottom: 20},
+  statCard: {flex: 1, backgroundColor: colors.white, borderRadius: 10, padding: 10, alignItems: 'center', borderTopWidth: 3, ...shadows.sm},
+  statIcon: {fontSize: 16, marginBottom: 2},
+  statValue: {fontSize: 20, fontWeight: '700'},
+  statLabel: {fontSize: 10, color: colors.textSecondary, marginTop: 2},
+  scroll: {padding: 16},
+  sectionHeader: {flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12},
+  sectionTitle: {fontSize: 16, fontWeight: '700', color: colors.text},
+  seeAll: {fontSize: 13, color: colors.primary, fontWeight: '500'},
+});
+
+export default OfficerDashboardScreen;
