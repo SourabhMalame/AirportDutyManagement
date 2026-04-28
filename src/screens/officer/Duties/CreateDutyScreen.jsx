@@ -68,6 +68,23 @@ const OfficerCreateDutyScreen = () => {
   const dayValue = dateValue ? getDayFromDate(dateValue) : '';
 
   useEffect(() => {
+    if (!prefill) return;
+    if (prefill.date) {
+      const d = new Date(prefill.date);
+      setSelectedDate(d);
+      setValue('date', prefill.date);
+    }
+    if (prefill.flightTime) {
+      setFlightTime(moment(prefill.flightTime, 'HH:mm').toDate());
+      setValue('flightTime', prefill.flightTime);
+    }
+    if (prefill.from) setValue('from', prefill.from);
+    if (prefill.to) setValue('to', prefill.to);
+    if (prefill.flightNo) setValue('flightNo', prefill.flightNo);
+    if (prefill.arrivalDeparture) setValue('arrivalDeparture', prefill.arrivalDeparture);
+  }, [prefill]);
+
+  useEffect(() => {
     dispatch(fetchAirportsStart());
     getAirports()
       .then(res => dispatch(fetchAirportsSuccess(res.data)))

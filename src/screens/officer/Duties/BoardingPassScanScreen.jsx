@@ -1,7 +1,7 @@
 import React, {useState} from 'react';
 import {
   View, Text, StyleSheet, ScrollView, Image,
-  TouchableOpacity, ActivityIndicator, Alert, Platform,
+  TouchableOpacity, ActivityIndicator, Alert, Platform, PermissionsAndroid,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {useNavigation} from '@react-navigation/native';
@@ -29,7 +29,32 @@ const BoardingPassScanScreen = () => {
   const [parsed, setParsed] = useState(null);
   const [rawText, setRawText] = useState('');
 
-  const pickImage = (fromCamera) => {
+  const requestCameraPermission = async () => {
+    if (Platform.OS !== 'android') return true;
+    const granted = await PermissionsAndroid.request(
+      PermissionsAndroid.PERMISSIONS.CAMERA,
+      {
+        title: 'Camera Permission',
+        message: 'This app needs camera access to scan boarding passes.',
+        buttonPositive: 'Allow',
+        buttonNegative: 'Deny',
+      },
+    );
+    if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+      Alert.alert(
+        'Camera Permission Denied',
+        'Please enable camera permission in Settings → Apps → AirportDutyManagement → Permissions.',
+      );
+      return false;
+    }
+    return true;
+  };
+
+  const pickImage = async (fromCamera) => {
+    if (fromCamera) {
+      const ok = await requestCameraPermission();
+      if (!ok) return;
+    }
     const options = {
       mediaType: 'photo',
       quality: 1.0,
