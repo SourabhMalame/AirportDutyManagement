@@ -66,6 +66,8 @@ exports.getSubordinateReport = async (req, res, next) => {
         completed: officerDuties.filter(d => d.status === 'COMPLETED').length,
         upcoming: officerDuties.filter(d => d.status === 'UPCOMING').length,
         cancelled: officerDuties.filter(d => d.status === 'CANCELLED').length,
+        beforeOffice: officerDuties.filter(d => d.officeType === 'BEFORE_OFFICE').length,
+        afterOffice: officerDuties.filter(d => d.officeType === 'AFTER_OFFICE').length,
         totalIncentive: completedIncentive.length * INCENTIVE_AMOUNT,
       };
     });

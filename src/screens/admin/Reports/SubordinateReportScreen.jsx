@@ -1,66 +1,15 @@
-import React, {useEffect} from 'react';
-import {View, Text, StyleSheet, FlatList, TouchableOpacity} from 'react-native';
+import React, {useEffect, useState} from 'react';
+import {View, Text, StyleSheet, FlatList, TouchableOpacity, Platform} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {useDispatch, useSelector} from 'react-redux';
 import {useNavigation} from '@react-navigation/native';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import moment from 'moment';
 import {fetchReportStart, fetchSubordinateReportSuccess, fetchReportFailure} from '../../../store/slices/reportSlice';
 import {getSubordinateReport} from '../../../api/reportApi';
 import EmptyState from '../../../components/common/EmptyState';
 import {colors} from '../../../theme/colors';
-import {DUTY_STATUS} from '../../../constants/dutyStatus';
-import {INCENTIVE_AMOUNT} from '../../../constants/dutyFormFields';
-
-const SubordinateReportScreen = () => {
-  const dispatch = useDispatch();
-  const navigation = useNavigation();
-  const {subordinateReport, isLoading} = useSelector(state => state.reports);
-
-  useEffect(() => {
-    const load = async () => {
-      dispatch(fetchReportStart());
-      try {
-        const res = await getSubordinateReport();
-        dispatch(fetchSubordinateReportSuccess(res.data));
-      } catch (e) {
-        dispatch(fetchReportFailure(e?.message));
-      }
-    };
-    load();
-  }, []);
-
-  return (
-    <SafeAreaView style={styles.safe}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.navigate('DutyReport')}><Text style={styles.tab}>Duty Report</Text></TouchableOpacity>
-        <Text style={[styles.tab, styles.activeTab]}>Subordinate Report</Text>
-      </View>
-      <FlatList
-        data={subordinateReport}
-        keyExtractor={item => item.officer?.id?.toString()}
-        renderItem={({item}) => (
-          <View style={styles.card}>
-            <View style={styles.avatarRow}>
-              <View style={styles.avatar}><Text style={styles.avatarText}>{item.officer?.name?.charAt(0)}</Text></View>
-              <View>
-                <Text style={styles.name}>{item.officer?.name}</Text>
-                <Text style={styles.empId}>{item.officer?.employeeId}</Text>
-              </View>
-            </View>
-            <View style={styles.statsRow}>
-              <StatBox label="Upcoming" value={item.upcoming || 0} color={colors.warning} />
-              <StatBox label="Completed" value={item.completed || 0} color={colors.success} />
-              <StatBox label="Cancelled" value={item.cancelled || 0} color={colors.error} />
-              <StatBox label="Incentive" value={`₹${item.totalIncentive || 0}`} color={colors.secondary} />
-            </View>
-          </View>
-        )}
-        contentContainerStyle={styles.list}
-        refreshing={isLoading}
-        ListEmptyComponent={<EmptyState icon="👮" title="No subordinate data" />}
-      />
-    </SafeAreaView>
-  );
-};
+import {exportSubordinateReportPDF} from '../../../utils/exportPdf';
 
 const StatBox = ({label, value, color}) => (
   <View style={styles.statBox}>
@@ -69,19 +18,159 @@ const StatBox = ({label, value, color}) => (
   </View>
 );
 
+const SubordinateReportScreen = () => {
+  const dispatch = useDispatch();
+  const navigation = useNavigation();
+  const {subordinateReport, isLoading} = useSelector(state => state.reports);
+
+  const [dateFrom, setDateFrom] = useState(null);
+  const [dateTo, setDateTo] = useState(null);
+  const [showFrom, setShowFrom] = useState(false);
+  const [showTo, setShowTo] = useState(false);
+
+  useEffect(() => {
+    const load = async () => {
+      dispatch(fetchReportStart());
+      try {
+        const params = {};
+        if (dateFrom) params.dateFrom = dateFrom;
+        if (dateTo) params.dateTo = dateTo;
+        const res = await getSubordinateReport(params);
+        dispatch(fetchSubordinateReportSuccess(res.data));
+      } catch (e) {
+        dispatch(fetchReportFailure(e?.message));
+      }
+    };
+    load();
+  }, [dateFrom, dateTo]);
+
+  return (
+    <SafeAreaView style={styles.safe}>
+      <View style={styles.header}>
+        <View style={styles.tabs}>
+          <TouchableOpacity onPress={() => navigation.navigate('DutyReport')}>
+            <Text style={styles.tab}>Duty Report</Text>
+          </TouchableOpacity>
+          <Text style={[styles.tab, styles.activeTab]}>Subordinate Report</Text>
+        </View>
+        <TouchableOpacity
+          style={styles.exportBtn}
+          onPress={() => exportSubordinateReportPDF(subordinateReport, {dateFrom, dateTo})}>
+          <Text style={styles.exportText}>⬇ Export PDF</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Date Range Filter */}
+      <View style={styles.filterBar}>
+        <Text style={styles.filterLabel}>Date Range</Text>
+        <View style={styles.dateRow}>
+          <TouchableOpacity style={styles.dateBtn} onPress={() => setShowFrom(true)}>
+            <Text style={styles.dateBtnText}>
+              {dateFrom ? moment(dateFrom).format('DD MMM YYYY') : 'From Date'}
+            </Text>
+          </TouchableOpacity>
+          <Text style={styles.dateSep}>—</Text>
+          <TouchableOpacity style={styles.dateBtn} onPress={() => setShowTo(true)}>
+            <Text style={styles.dateBtnText}>
+              {dateTo ? moment(dateTo).format('DD MMM YYYY') : 'To Date'}
+            </Text>
+          </TouchableOpacity>
+          {(dateFrom || dateTo) && (
+            <TouchableOpacity
+              style={styles.clearDate}
+              onPress={() => { setDateFrom(null); setDateTo(null); }}>
+              <Text style={styles.clearDateText}>✕ Clear</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+        {showFrom && (
+          <DateTimePicker
+            value={dateFrom ? new Date(dateFrom) : new Date()}
+            mode="date"
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            onChange={(_, d) => { setShowFrom(false); if (d) setDateFrom(moment(d).format('YYYY-MM-DD')); }}
+          />
+        )}
+        {showTo && (
+          <DateTimePicker
+            value={dateTo ? new Date(dateTo) : new Date()}
+            mode="date"
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            onChange={(_, d) => { setShowTo(false); if (d) setDateTo(moment(d).format('YYYY-MM-DD')); }}
+          />
+        )}
+      </View>
+
+      <FlatList
+        data={subordinateReport}
+        keyExtractor={item => item.officer?.id?.toString()}
+        renderItem={({item}) => (
+          <View style={styles.card}>
+            <View style={styles.avatarRow}>
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>{item.officer?.name?.charAt(0)}</Text>
+              </View>
+              <View style={styles.officerInfo}>
+                <Text style={styles.name}>{item.officer?.name}</Text>
+                <Text style={styles.empId}>{item.officer?.employeeId}</Text>
+              </View>
+              <View style={styles.totalBadge}>
+                <Text style={styles.totalBadgeNum}>{item.totalDuties || 0}</Text>
+                <Text style={styles.totalBadgeLabel}>Total</Text>
+              </View>
+            </View>
+
+            <View style={styles.statsRow}>
+              <StatBox label="Upcoming" value={item.upcoming || 0} color={colors.warning} />
+              <StatBox label="Completed" value={item.completed || 0} color={colors.success} />
+              <StatBox label="Cancelled" value={item.cancelled || 0} color={colors.error} />
+            </View>
+
+            <View style={[styles.statsRow, styles.statsRowBottom]}>
+              <StatBox label="Before Office" value={item.beforeOffice || 0} color="#7C3AED" />
+              <StatBox label="After Office" value={item.afterOffice || 0} color="#7C3AED" />
+              <StatBox label="Incentive" value={`₹${item.totalIncentive || 0}`} color={colors.secondary} />
+            </View>
+          </View>
+        )}
+        contentContainerStyle={styles.list}
+        refreshing={isLoading}
+        onRefresh={() => { setDateFrom(null); setDateTo(null); }}
+        ListEmptyComponent={<EmptyState icon="👮" title="No subordinate data" subtitle="No officers found for selected period" />}
+      />
+    </SafeAreaView>
+  );
+};
+
 const styles = StyleSheet.create({
   safe: {flex: 1, backgroundColor: colors.background},
-  header: {flexDirection: 'row', padding: 16, gap: 20, backgroundColor: colors.white, borderBottomWidth: 1, borderBottomColor: colors.border},
+  header: {flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, backgroundColor: colors.white, borderBottomWidth: 1, borderBottomColor: colors.border},
+  tabs: {flexDirection: 'row', gap: 20},
   tab: {fontSize: 15, color: colors.textSecondary, paddingBottom: 4},
   activeTab: {color: colors.primary, fontWeight: '700', borderBottomWidth: 2, borderBottomColor: colors.primary},
+  exportBtn: {backgroundColor: colors.primary, paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8},
+  exportText: {color: colors.white, fontWeight: '600', fontSize: 13},
+  filterBar: {backgroundColor: colors.surface, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: colors.border},
+  filterLabel: {fontSize: 11, fontWeight: '600', color: colors.textSecondary, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5},
+  dateRow: {flexDirection: 'row', alignItems: 'center', gap: 8},
+  dateBtn: {flex: 1, borderWidth: 1.5, borderColor: colors.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, backgroundColor: colors.background},
+  dateBtnText: {fontSize: 13, color: colors.text, textAlign: 'center'},
+  dateSep: {fontSize: 14, color: colors.textSecondary},
+  clearDate: {paddingHorizontal: 10, paddingVertical: 6, backgroundColor: '#FEE2E2', borderRadius: 8},
+  clearDateText: {fontSize: 11, color: colors.error, fontWeight: '600'},
   list: {padding: 12},
-  card: {backgroundColor: colors.white, borderRadius: 12, padding: 16, marginBottom: 10},
+  card: {backgroundColor: colors.white, borderRadius: 12, padding: 16, marginBottom: 10, elevation: 1},
   avatarRow: {flexDirection: 'row', alignItems: 'center', marginBottom: 12},
-  avatar: {width: 40, height: 40, borderRadius: 20, backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center', marginRight: 12},
-  avatarText: {color: colors.white, fontSize: 16, fontWeight: '700'},
+  avatar: {width: 42, height: 42, borderRadius: 21, backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center', marginRight: 12},
+  avatarText: {color: colors.white, fontSize: 17, fontWeight: '700'},
+  officerInfo: {flex: 1},
   name: {fontSize: 15, fontWeight: '600', color: colors.text},
   empId: {fontSize: 12, color: colors.textSecondary},
+  totalBadge: {alignItems: 'center', backgroundColor: colors.background, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6},
+  totalBadgeNum: {fontSize: 18, fontWeight: '700', color: colors.primary},
+  totalBadgeLabel: {fontSize: 9, color: colors.textSecondary},
   statsRow: {flexDirection: 'row', gap: 8},
+  statsRowBottom: {marginTop: 8},
   statBox: {flex: 1, backgroundColor: colors.background, borderRadius: 8, padding: 10, alignItems: 'center'},
   statValue: {fontSize: 16, fontWeight: '700'},
   statLabel: {fontSize: 10, color: colors.textSecondary, marginTop: 2, textAlign: 'center'},

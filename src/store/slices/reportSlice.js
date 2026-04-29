@@ -4,6 +4,7 @@ const reportSlice = createSlice({
   name: 'reports',
   initialState: {
     dutyReport: [],
+    dutyReportSummary: null,
     subordinateReport: [],
     isLoading: false,
     error: null,
@@ -15,7 +16,8 @@ const reportSlice = createSlice({
     },
     fetchDutyReportSuccess(state, action) {
       state.isLoading = false;
-      state.dutyReport = action.payload;
+      state.dutyReport = action.payload.duties;
+      state.dutyReportSummary = action.payload.summary;
     },
     fetchSubordinateReportSuccess(state, action) {
       state.isLoading = false;
