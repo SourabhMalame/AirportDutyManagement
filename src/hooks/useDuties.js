@@ -1,7 +1,9 @@
 import {useDispatch, useSelector} from 'react-redux';
 import Toast from 'react-native-toast-message';
-import {fetchDutiesStart, fetchDutiesSuccess, fetchDutiesFailure, updateDutyInList, addDutyToList, setSelectedDuty, setFilters as setFiltersAction} from '../store/slices/dutySlice';
+import {fetchDutiesStart, fetchDutiesSuccess, appendDutiesSuccess, fetchDutiesFailure, updateDutyInList, addDutyToList, setSelectedDuty, setFilters as setFiltersAction} from '../store/slices/dutySlice';
 import {getDuties, getDutyById, createDuty, updateDutyStatus} from '../api/dutyApi';
+
+const PAGE_SIZE = 20;
 
 export const useDuties = () => {
   const dispatch = useDispatch();
@@ -10,10 +12,25 @@ export const useDuties = () => {
   const fetchDuties = async (filters = {}) => {
     dispatch(fetchDutiesStart());
     try {
-      const res = await getDuties(filters);
-      dispatch(fetchDutiesSuccess({duties: res.data.duties || res.data, total: res.data.total || 0}));
+      const res = await getDuties({...filters, page: 1, limit: PAGE_SIZE});
+      const data = res.data;
+      dispatch(fetchDutiesSuccess({duties: data.duties || data, total: data.total || 0, hasMore: data.hasMore ?? false}));
     } catch (err) {
       dispatch(fetchDutiesFailure(err?.message || 'Failed to fetch duties'));
+    }
+  };
+
+  const loadMore = async (filters = {}) => {
+    const {pagination} = dutyState;
+    if (!pagination.hasMore || dutyState.isLoading) return;
+    const nextPage = pagination.page + 1;
+    dispatch(fetchDutiesStart());
+    try {
+      const res = await getDuties({...filters, page: nextPage, limit: PAGE_SIZE});
+      const data = res.data;
+      dispatch(appendDutiesSuccess({duties: data.duties || [], total: data.total || 0, hasMore: data.hasMore ?? false, page: nextPage}));
+    } catch (err) {
+      dispatch(fetchDutiesFailure(err?.message || 'Failed to load more duties'));
     }
   };
 
@@ -53,5 +70,5 @@ export const useDuties = () => {
 
   const setFilters = filters => dispatch(setFiltersAction(filters));
 
-  return {...dutyState, fetchDuties, fetchDuty, addDuty, changeStatus, setFilters};
+  return {...dutyState, fetchDuties, loadMore, fetchDuty, addDuty, changeStatus, setFilters};
 };

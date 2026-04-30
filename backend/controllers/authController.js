@@ -122,3 +122,14 @@ exports.resendOTP = async (req, res, next) => {
 exports.logout = async (req, res) => {
   res.json({ message: 'Logged out successfully' });
 };
+
+exports.saveFcmToken = async (req, res, next) => {
+  try {
+    const { fcmToken } = req.body;
+    if (!fcmToken) return res.status(400).json({ message: 'fcmToken is required' });
+    await User.findByIdAndUpdate(req.user._id, { fcmToken });
+    res.json({ message: 'FCM token saved' });
+  } catch (err) {
+    next(err);
+  }
+};

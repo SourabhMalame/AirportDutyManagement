@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {View, Text, StyleSheet, FlatList, TouchableOpacity, ScrollView} from 'react-native';
+import {View, Text, StyleSheet, FlatList, TouchableOpacity, ScrollView, ActivityIndicator} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {useSelector} from 'react-redux';
 import {useNavigation} from '@react-navigation/native';
@@ -15,7 +15,7 @@ const TABS = ['ALL', ...Object.values(DUTY_STATUS)];
 const MyDutiesScreen = () => {
   const navigation = useNavigation();
   const {user} = useSelector(state => state.auth);
-  const {list: duties, fetchDuties, changeStatus, isLoading} = useDuties();
+  const {list: duties, fetchDuties, loadMore, changeStatus, isLoading, pagination} = useDuties();
   const [activeTab, setActiveTab] = useState('ALL');
   const [updatingId, setUpdatingId] = useState(null);
 
@@ -76,8 +76,11 @@ const MyDutiesScreen = () => {
           </View>
         )}
         contentContainerStyle={styles.list}
-        refreshing={isLoading}
+        refreshing={isLoading && pagination.page === 1}
         onRefresh={() => fetchDuties({officerId: user?.id})}
+        onEndReached={() => activeTab === 'ALL' && loadMore({officerId: user?.id})}
+        onEndReachedThreshold={0.3}
+        ListFooterComponent={isLoading && pagination.page > 1 ? <ActivityIndicator style={styles.footer} color={colors.primary} /> : null}
         ListEmptyComponent={<EmptyState icon="📋" title={activeTab === 'ALL' ? 'No duties assigned' : `No ${activeTab.charAt(0) + activeTab.slice(1).toLowerCase()} duties`} />}
       />
     </SafeAreaView>
@@ -94,6 +97,7 @@ const styles = StyleSheet.create({
   tabText: {fontSize: 13, color: colors.textSecondary},
   tabTextActive: {color: colors.white, fontWeight: '600'},
   list: {padding: 12},
+  footer: {paddingVertical: 16},
   actionRow: {flexDirection: 'row', gap: 10, marginTop: -4, marginBottom: 10, paddingHorizontal: 2},
   actionBtn: {flex: 1, minHeight: 38, paddingVertical: 8},
 });

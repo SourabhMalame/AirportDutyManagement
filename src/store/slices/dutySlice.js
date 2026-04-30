@@ -26,6 +26,14 @@ const dutySlice = createSlice({
       state.list = action.payload.duties;
       state.pagination.total = action.payload.total;
       state.pagination.hasMore = action.payload.hasMore ?? false;
+      state.pagination.page = 1;
+    },
+    appendDutiesSuccess(state, action) {
+      state.isLoading = false;
+      state.list = [...state.list, ...action.payload.duties];
+      state.pagination.total = action.payload.total;
+      state.pagination.hasMore = action.payload.hasMore ?? false;
+      state.pagination.page = action.payload.page;
     },
     fetchDutiesFailure(state, action) {
       state.isLoading = false;
@@ -51,7 +59,7 @@ const dutySlice = createSlice({
 });
 
 export const {
-  fetchDutiesStart, fetchDutiesSuccess, fetchDutiesFailure,
+  fetchDutiesStart, fetchDutiesSuccess, appendDutiesSuccess, fetchDutiesFailure,
   setSelectedDuty, setFilters, clearFilters, updateDutyInList, addDutyToList,
 } = dutySlice.actions;
 export default dutySlice.reducer;

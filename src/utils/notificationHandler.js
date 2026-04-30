@@ -1,4 +1,4 @@
-import notifee, {AndroidImportance} from '@notifee/react-native';
+import notifee, {AndroidImportance, EventType} from '@notifee/react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const SEEN_KEY = '@duty_seen_ids';
@@ -48,6 +48,7 @@ export async function checkAndNotifyNewDuties(duties) {
         await notifee.displayNotification({
           title: 'New Duty Assigned',
           body: `Flight ${d.flightNo || '—'} at ${d.airportName || 'Airport'} on ${d.date || '—'}`,
+          data: {dutyId: String(d._id || d.id || '')},
           android: {channelId, pressAction: {id: 'default'}, smallIcon: 'ic_launcher'},
         });
       } else {
@@ -65,6 +66,13 @@ export async function checkAndNotifyNewDuties(duties) {
   }
 }
 
-export function setupForegroundNotificationListener() {
-  return () => {};
+export function setupForegroundNotificationListener(navigationRef) {
+  return notifee.onForegroundEvent(({type, detail}) => {
+    if (type === EventType.PRESS && detail.notification) {
+      const dutyId = detail.notification.data?.dutyId;
+      if (dutyId && navigationRef?.current) {
+        navigationRef.current.navigate('DutyDetail', {dutyId});
+      }
+    }
+  });
 }

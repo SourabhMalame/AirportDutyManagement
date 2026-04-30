@@ -1,6 +1,7 @@
 package com.airportdutymanagement
 
 import android.app.Application
+import cl.json.ShareApplication
 import com.facebook.react.PackageList
 import com.facebook.react.ReactApplication
 import com.facebook.react.ReactHost
@@ -12,7 +13,9 @@ import com.facebook.react.defaults.DefaultReactNativeHost
 import com.facebook.react.flipper.ReactNativeFlipper
 import com.facebook.soloader.SoLoader
 
-class MainApplication : Application(), ReactApplication {
+class MainApplication : Application(), ReactApplication, ShareApplication {
+
+  override fun getFileProviderAuthority(): String = "${packageName}.provider"
 
   override val reactNativeHost: ReactNativeHost =
       object : DefaultReactNativeHost(this) {

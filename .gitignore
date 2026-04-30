@@ -28,3 +28,7 @@ yarn-error.log
 .metro-health-check*
 /coverage
 .env
+backend/serviceAccountKey.json
+backend.log
+metro.log
+Sample Data/

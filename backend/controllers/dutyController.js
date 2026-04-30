@@ -1,9 +1,25 @@
 const Duty = require('../models/Duty');
+const User = require('../models/User');
+const { sendPushNotification } = require('../utils/fcm');
 
 exports.createDuty = async (req, res, next) => {
   try {
     const duty = await Duty.create({ ...req.body, createdBy: req.user._id });
-    res.status(201).json(duty.toJSON());
+    const dutyJson = duty.toJSON();
+
+    if (duty.officerId) {
+      const officer = await User.findById(duty.officerId).select('fcmToken name');
+      if (officer?.fcmToken) {
+        sendPushNotification({
+          token: officer.fcmToken,
+          title: 'New Duty Assigned',
+          body: `Flight ${duty.flightNo || '—'} at ${duty.airportName || 'Airport'} on ${duty.date || '—'}`,
+          data: { dutyId: dutyJson.id },
+        });
+      }
+    }
+
+    res.status(201).json(dutyJson);
   } catch (err) {
     next(err);
   }

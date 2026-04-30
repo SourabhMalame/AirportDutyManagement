@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "320974813686",
+    "project_id": "airportmgnt",
+    "storage_bucket": "airportmgnt.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:320974813686:android:1d2b9b0cd6e44e92872fd7",
+        "android_client_info": {
+          "package_name": "com.airportdutymanagement"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBMYEwmjUhpvLPzh35PvYBRUpbN3oPChVo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

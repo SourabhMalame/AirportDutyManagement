@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity} from 'react-native';
+import {View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, ActivityIndicator} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {useNavigation} from '@react-navigation/native';
 import {useDuties} from '../../../hooks/useDuties';
@@ -10,7 +10,7 @@ import {colors} from '../../../theme/colors';
 
 const AllDutiesScreen = () => {
   const navigation = useNavigation();
-  const {list: duties, fetchDuties, isLoading, filters, setFilters} = useDuties();
+  const {list: duties, fetchDuties, loadMore, isLoading, filters, setFilters, pagination} = useDuties();
   const [search, setSearch] = useState('');
 
   useEffect(() => {fetchDuties(filters);}, [filters]);
@@ -46,8 +46,11 @@ const AllDutiesScreen = () => {
           <DutyCard duty={item} onPress={() => navigation.navigate('DutyDetail', {dutyId: item.id})} />
         )}
         contentContainerStyle={styles.list}
-        refreshing={isLoading}
+        refreshing={isLoading && pagination.page === 1}
         onRefresh={() => fetchDuties(filters)}
+        onEndReached={() => !search && loadMore(filters)}
+        onEndReachedThreshold={0.3}
+        ListFooterComponent={isLoading && pagination.page > 1 ? <ActivityIndicator style={styles.footer} color={colors.primary} /> : null}
         ListEmptyComponent={<EmptyState icon="📋" title="No duties found" subtitle="Try adjusting your filters" />}
       />
     </SafeAreaView>
@@ -63,6 +66,7 @@ const styles = StyleSheet.create({
   searchBox: {padding: 12, backgroundColor: colors.white, borderBottomWidth: 1, borderBottomColor: colors.border},
   search: {backgroundColor: colors.background, borderRadius: 8, paddingHorizontal: 14, paddingVertical: 10, fontSize: 14, color: colors.text},
   list: {padding: 12},
+  footer: {paddingVertical: 16},
 });
 
 export default AllDutiesScreen;

@@ -1,4 +1,5 @@
 const errorHandler = (err, req, res, next) => {
+  console.error(`[ERROR] ${req.method} ${req.path}:`, err.message, err.stack?.split('\n')[1]?.trim());
   const status = err.statusCode || 500;
   const message = err.message || 'Internal Server Error';
 

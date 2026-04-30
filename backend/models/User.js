@@ -11,6 +11,7 @@ const userSchema = new mongoose.Schema(
     employeeId: { type: String, required: true, unique: true },
     role: { type: String, enum: ['ADMIN', 'OFFICER'], default: 'OFFICER' },
     isEnabled: { type: Boolean, default: true },
+    fcmToken: { type: String, default: null },
     otp: { type: String, select: false },
     otpExpiry: { type: Date, select: false },
   },

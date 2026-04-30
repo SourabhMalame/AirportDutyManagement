@@ -14,3 +14,6 @@ export const resendOtpApi = userId =>
 
 export const logoutApi = () =>
   axiosInstance.post('/auth/logout');
+
+export const saveFcmTokenApi = fcmToken =>
+  axiosInstance.post('/auth/fcm-token', { fcmToken });

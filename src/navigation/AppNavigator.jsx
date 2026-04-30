@@ -9,11 +9,11 @@ import OfficerTabs from './OfficerTabs';
 
 const Stack = createNativeStackNavigator();
 
-export default function AppNavigator() {
+export default function AppNavigator({navigationRef}) {
   const {isLoggedIn, role} = useSelector(state => state.auth);
 
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       <Stack.Navigator screenOptions={{headerShown: false}}>
         {!isLoggedIn ? (
           <Stack.Screen name="Auth" component={AuthStack} />
