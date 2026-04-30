@@ -86,9 +86,8 @@ const OTPScreen = () => {
           <View style={styles.card}>
             <Text style={styles.cardTitle}>OTP Verification</Text>
             <Text style={styles.subtitle}>
-              Enter the 6-digit code sent to
+              Enter the 6-digit code sent to your registered mobile number
             </Text>
-            <Text style={styles.email}>{otpPending?.maskedEmail}</Text>
 
             {!!error && (
               <View style={styles.errorBox}>
