@@ -37,13 +37,17 @@ exports.sendOTP = async (req, res, next) => {
     const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
     await User.findByIdAndUpdate(user._id, { otp, otpExpiry });
 
-    await sendOtpSms(user.phone, otp);
+    const smsSent = await sendOtpSms(user.phone, otp);
 
     const maskedPhone = user.phone.replace(/(\d{2})\d+(\d{2})/, '$1******$2');
     const maskedEmail = user.email.replace(/(.{2})(.*)(@.*)/, '$1***$3');
-    const response = { message: `OTP sent to ${maskedPhone}`, userId: user._id, maskedEmail };
+    const response = {
+      message: smsSent ? `OTP sent to ${maskedPhone}` : 'OTP generated (SMS delivery failed)',
+      userId: user._id,
+      maskedEmail,
+    };
 
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === 'development' || !smsSent) {
       response.otp = otp;
     }
 
@@ -92,12 +96,14 @@ exports.resendOTP = async (req, res, next) => {
     const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
     await User.findByIdAndUpdate(userId, { otp, otpExpiry });
 
-    await sendOtpSms(user.phone, otp);
+    const smsSent = await sendOtpSms(user.phone, otp);
 
     const maskedPhone = user.phone.replace(/(\d{2})\d+(\d{2})/, '$1******$2');
-    const response = { message: `OTP resent to ${maskedPhone}` };
+    const response = {
+      message: smsSent ? `OTP resent to ${maskedPhone}` : 'OTP generated (SMS delivery failed)',
+    };
 
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === 'development' || !smsSent) {
       response.otp = otp;
     }
 
