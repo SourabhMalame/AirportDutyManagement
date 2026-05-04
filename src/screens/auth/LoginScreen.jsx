@@ -1,5 +1,5 @@
-import React, {useState, useEffect} from 'react';
-import {View, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity} from 'react-native';
+import React, {useEffect} from 'react';
+import {View, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {useNavigation} from '@react-navigation/native';
 import {useForm, Controller} from 'react-hook-form';
@@ -9,12 +9,10 @@ import {useAuth} from '../../hooks/useAuth';
 import AppInput from '../../components/common/AppInput';
 import AppButton from '../../components/common/AppButton';
 import {colors} from '../../theme/colors';
-import {ROLES} from '../../constants/roles';
 
 const LoginScreen = () => {
   const navigation = useNavigation();
   const {sendOTP, isLoading, error, clearError} = useAuth();
-  const [selectedRole, setSelectedRole] = useState(ROLES.OFFICER);
 
   useEffect(() => {
     clearError();
@@ -26,7 +24,7 @@ const LoginScreen = () => {
   });
 
   const onSubmit = async data => {
-    const success = await sendOTP({...data, role: selectedRole});
+    const success = await sendOTP(data);
     if (success) {
       navigation.navigate('OTP');
     }
@@ -46,24 +44,6 @@ const LoginScreen = () => {
 
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Sign In</Text>
-
-            {/* Role Selector */}
-            <View style={styles.roleContainer}>
-              <TouchableOpacity
-                style={[styles.roleBtn, selectedRole === ROLES.ADMIN && styles.roleBtnActive]}
-                onPress={() => setSelectedRole(ROLES.ADMIN)}>
-                <Text style={[styles.roleText, selectedRole === ROLES.ADMIN && styles.roleTextActive]}>
-                  Admin
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.roleBtn, selectedRole === ROLES.OFFICER && styles.roleBtnActive]}
-                onPress={() => setSelectedRole(ROLES.OFFICER)}>
-                <Text style={[styles.roleText, selectedRole === ROLES.OFFICER && styles.roleTextActive]}>
-                  Subordinate
-                </Text>
-              </TouchableOpacity>
-            </View>
 
             {!!error && (
               <View style={styles.errorBox}>
@@ -126,11 +106,6 @@ const styles = StyleSheet.create({
   appSub: {fontSize: 14, color: 'rgba(255,255,255,0.7)', marginTop: 4},
   card: {backgroundColor: colors.white, borderRadius: 16, padding: 24},
   cardTitle: {fontSize: 20, fontWeight: '700', color: colors.text, marginBottom: 16},
-  roleContainer: {flexDirection: 'row', backgroundColor: '#F1F5F9', borderRadius: 10, padding: 4, marginBottom: 20},
-  roleBtn: {flex: 1, paddingVertical: 10, borderRadius: 8, alignItems: 'center'},
-  roleBtnActive: {backgroundColor: colors.primary, shadowColor: '#000', shadowOffset: {width: 0, height: 1}, shadowOpacity: 0.1, shadowRadius: 2, elevation: 2},
-  roleText: {fontSize: 14, fontWeight: '600', color: colors.textSecondary},
-  roleTextActive: {color: colors.white},
   errorBox: {backgroundColor: '#FEE2E2', borderRadius: 8, padding: 12, marginBottom: 16},
   errorText: {fontSize: 13, color: colors.error},
   btn: {marginTop: 8},

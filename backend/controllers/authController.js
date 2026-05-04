@@ -18,7 +18,7 @@ const findUser = identifier =>
 
 exports.sendOTP = async (req, res, next) => {
   try {
-    const { identifier, password, role } = req.body;
+    const { identifier, password } = req.body;
     if (!identifier || !password)
       return res.status(400).json({ message: 'Identifier and password are required' });
 
@@ -29,9 +29,6 @@ exports.sendOTP = async (req, res, next) => {
 
     if (!user.isEnabled)
       return res.status(403).json({ message: 'Your account has been disabled. Contact admin.' });
-
-    if (role && user.role !== role)
-      return res.status(403).json({ message: `This account is not registered as ${role}. Please select the correct role.` });
 
     const otp = generateOTP();
     const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
