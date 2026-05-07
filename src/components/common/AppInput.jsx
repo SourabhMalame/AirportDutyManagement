@@ -1,3 +1,4 @@
+
 import React, {useState} from 'react';
 import {View, TextInput, Text, StyleSheet, TouchableOpacity} from 'react-native';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
@@ -55,3 +56,4 @@ const styles = StyleSheet.create({
 });
 
 export default AppInput;
+ ``
